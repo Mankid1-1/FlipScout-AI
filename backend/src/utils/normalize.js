@@ -2,7 +2,8 @@ export function toNumber(value) {
   if (value === null || value === undefined) {
     return null;
   }
-  const match = String(value).match(/^-?\d+(\.\d+)?/);
+  const normalized = String(value).replace(/,/g, "");
+  const match = normalized.match(/^-?\d+(\.\d+)?/);
   if (!match) {
     return null;
   }
