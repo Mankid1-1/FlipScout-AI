@@ -16,6 +16,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const bestPlatform = result?.bestPlatform;
 
   const loadHistory = async () => {
     const response = await fetchHistory();
@@ -85,7 +86,9 @@ export default function App() {
                 </div>
                 <div>
                   <strong>Net Profit</strong>
-                  <div>${result.bestPlatform.netProfit}</div>
+                  <div>
+                    {bestPlatform ? `$${bestPlatform.netProfit}` : "N/A"}
+                  </div>
                 </div>
                 <div>
                   <strong>Resale Range</strong>
@@ -99,7 +102,7 @@ export default function App() {
                 </div>
                 <div>
                   <strong>Best Platform</strong>
-                  <div>{result.bestPlatform.label}</div>
+                  <div>{bestPlatform?.label ?? "N/A"}</div>
                 </div>
               </div>
               <div>
