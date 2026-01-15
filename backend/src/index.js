@@ -51,8 +51,13 @@ app.get("/api/history", (req, res) => {
 });
 
 app.post("/api/rerun/:id", async (req, res) => {
-  const analysisId = Number.parseInt(req.params.id, 10);
-  if (Number.isNaN(analysisId)) {
+  const analysisIdParam = req.params.id;
+  if (!/^\d+$/.test(analysisIdParam)) {
+    return res.status(400).json({ error: "Invalid analysis id" });
+  }
+
+  const analysisId = Number(analysisIdParam);
+  if (!Number.isSafeInteger(analysisId)) {
     return res.status(400).json({ error: "Invalid analysis id" });
   }
 
