@@ -9,7 +9,9 @@ const templates = {
 
 export function generateSellerMessages(listing, suggestedOffer) {
   const title = listing.title || "item";
-  const offer = Math.round(suggestedOffer);
+  const rawOffer = Number(suggestedOffer);
+  const validatedOffer = Number.isFinite(rawOffer) && rawOffer > 0 ? rawOffer : 1;
+  const offer = Math.round(validatedOffer);
   return [
     templates.fastCash(title, offer),
     templates.politeOffer(title, offer),
