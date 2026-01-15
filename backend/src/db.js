@@ -49,14 +49,22 @@ export function listAnalyses({ userId, limit }) {
   const stmt = db.prepare(
     `SELECT * FROM analyses WHERE user_id = ? ORDER BY id DESC LIMIT ?`
   );
-  return stmt.all(userId, limit).map((row) => ({
-    id: row.id,
-    userId: row.user_id,
-    inputText: row.input_text,
-    normalized: safeParse(row.normalized_json, null),
-    output: safeParse(row.output_json, null),
-    createdAt: row.created_at
-  }));
+  return stmt.all(userId, limit).reduce((accumulator, row) => {
+    const normalized = safeParse(row.normalized_json, null);
+    const output = safeParse(row.output_json, null);
+    if (normalized === null || output === null) {
+      return accumulator;
+    }
+    accumulator.push({
+      id: row.id,
+      userId: row.user_id,
+      inputText: row.input_text,
+      normalized,
+      output,
+      createdAt: row.created_at
+    });
+    return accumulator;
+  }, []);
 }
 
 export function getAnalysis(id) {
