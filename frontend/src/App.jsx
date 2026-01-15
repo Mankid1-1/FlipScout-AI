@@ -17,6 +17,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const bestPlatform = result?.bestPlatform;
 
   const loadHistory = async () => {
     try {
@@ -95,7 +96,9 @@ export default function App() {
                 </div>
                 <div>
                   <strong>Net Profit</strong>
-                  <div>${result.bestPlatform.netProfit}</div>
+                  <div>
+                    {bestPlatform ? `$${bestPlatform.netProfit}` : "N/A"}
+                  </div>
                 </div>
                 <div>
                   <strong>Resale Range</strong>
@@ -109,7 +112,7 @@ export default function App() {
                 </div>
                 <div>
                   <strong>Best Platform</strong>
-                  <div>{result.bestPlatform.label}</div>
+                  <div>{bestPlatform?.label ?? "N/A"}</div>
                 </div>
               </div>
               <div>
