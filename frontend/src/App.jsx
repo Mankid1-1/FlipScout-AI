@@ -15,15 +15,25 @@ export default function App() {
   const [inputText, setInputText] = useState(defaultInput);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const loadHistory = async () => {
-    const response = await fetchHistory();
-    setHistory(response.history);
+    try {
+      const response = await fetchHistory();
+      const safeHistory = Array.isArray(response?.history)
+        ? response.history
+        : [];
+      setHistory(safeHistory);
+      setError(null);
+    } catch (loadError) {
+      setError(loadError?.message ?? "Unable to load history.");
+      setHistory([]);
+    }
   };
 
   useEffect(() => {
-    loadHistory();
+    void loadHistory();
   }, []);
 
   const handleAnalyze = async () => {
@@ -144,6 +154,7 @@ export default function App() {
 
       <div className="card" style={{ marginTop: 24 }}>
         <h2>Recent Analyses</h2>
+        {error ? <p style={{ color: "#b91c1c" }}>{error}</p> : null}
         <ul className="list">
           {history.map((item) => (
             <li key={item.id}>
