@@ -2,12 +2,16 @@ import { scoringThresholds } from "../config/thresholds.js";
 import { clamp } from "../utils/normalize.js";
 
 export function scoreDeal({ listing, pricing }) {
-  const price = listing.price ?? pricing.resaleMid * 0.7;
-  const discount = (pricing.resaleMid - price) / pricing.resaleMid;
-  const confidence = pricing.confidence;
+  const hasValidResaleMid =
+    Number.isFinite(pricing.resaleMid) && pricing.resaleMid > 0;
+  const safeResaleMid = hasValidResaleMid ? pricing.resaleMid : 90;
+  const price = listing.price ?? safeResaleMid * 0.7;
+  const discount = (safeResaleMid - price) / safeResaleMid;
+  const confidence = hasValidResaleMid ? pricing.confidence : 0.2;
   const categoryReliability = listing.category?.reliability ?? 0.4;
   const conditionPenalty = listing.conditionNotes ? 0.05 : 0.12;
   const pickupBonus = listing.location ? 0.05 : 0;
+  const resaleMidPenalty = hasValidResaleMid ? 0 : 15;
 
   const rawScore =
     50 +
@@ -15,7 +19,8 @@ export function scoreDeal({ listing, pricing }) {
     confidence * 20 +
     categoryReliability * 10 -
     conditionPenalty * 100 +
-    pickupBonus * 100;
+    pickupBonus * 100 -
+    resaleMidPenalty;
 
   const score = Math.round(
     clamp(rawScore, scoringThresholds.minScore, scoringThresholds.maxScore)
@@ -49,10 +54,13 @@ export function scoreDeal({ listing, pricing }) {
   }
 
   let riskLevel = "High";
-  if (confidence >= scoringThresholds.mediumRisk && discount > 0) {
+  if (hasValidResaleMid && confidence >= scoringThresholds.mediumRisk && discount > 0) {
     riskLevel = "Low";
-  } else if (confidence >= scoringThresholds.highRisk) {
+  } else if (hasValidResaleMid && confidence >= scoringThresholds.highRisk) {
     riskLevel = "Medium";
+  }
+  if (!hasValidResaleMid) {
+    why.push("Resale estimate missing; score adjusted conservatively.");
   }
 
   return {
