@@ -10,6 +10,15 @@ if (!fs.existsSync(dataDir)) {
 const dbPath = path.join(dataDir, "flipscout.db");
 const db = new Database(dbPath);
 
+function safeParse(json, fallback) {
+  try {
+    return JSON.parse(json);
+  } catch (error) {
+    console.error("Failed to parse JSON from database.", { error, json });
+    return fallback;
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS analyses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,8 +53,8 @@ export function listAnalyses({ userId, limit }) {
     id: row.id,
     userId: row.user_id,
     inputText: row.input_text,
-    normalized: JSON.parse(row.normalized_json),
-    output: JSON.parse(row.output_json),
+    normalized: safeParse(row.normalized_json, null),
+    output: safeParse(row.output_json, null),
     createdAt: row.created_at
   }));
 }
@@ -60,8 +69,8 @@ export function getAnalysis(id) {
     id: row.id,
     userId: row.user_id,
     inputText: row.input_text,
-    normalized: JSON.parse(row.normalized_json),
-    output: JSON.parse(row.output_json),
+    normalized: safeParse(row.normalized_json, null),
+    output: safeParse(row.output_json, null),
     createdAt: row.created_at
   };
 }
