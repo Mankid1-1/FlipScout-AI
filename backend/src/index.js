@@ -15,44 +15,68 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.post("/api/analyze", (req, res) => {
+app.post("/api/analyze", async (req, res) => {
   const inputText = req.body?.inputText;
   if (!inputText) {
     return res.status(400).json({ error: "inputText is required" });
   }
 
-  const output = analyzeListing(inputText);
-  const id = insertAnalysis({
-    userId: USER_ID,
-    inputText,
-    normalized: output.listing,
-    output
-  });
+  try {
+    const output = await analyzeListing(inputText);
+    const id = await insertAnalysis({
+      userId: USER_ID,
+      inputText,
+      normalized: output.listing,
+      output
+    });
 
-  return res.json({ id, ...output });
+    return res.json({ id, ...output });
+  } catch (err) {
+    console.error("Analyze failed:", err);
+    return res
+      .status(500)
+      .json({ error: "analysis_failed", message: err.message });
+  }
 });
 
 app.get("/api/history", (req, res) => {
-  const limit = Number.parseInt(req.query.limit, 10) || historyLimit;
-  const history = listAnalyses({ userId: USER_ID, limit });
+  const MAX_HISTORY_LIMIT = 100;
+  const requestedLimit = Number.parseInt(req.query.limit, 10);
+  const fallbackLimit = historyLimit;
+  const safeLimit = Number.isNaN(requestedLimit)
+    ? fallbackLimit
+    : Math.min(Math.max(requestedLimit, 1), MAX_HISTORY_LIMIT);
+  const history = listAnalyses({ userId: USER_ID, limit: safeLimit });
   return res.json({ history });
 });
 
-app.post("/api/rerun/:id", (req, res) => {
-  const analysis = getAnalysis(req.params.id);
-  if (!analysis) {
-    return res.status(404).json({ error: "Analysis not found" });
+app.post("/api/rerun/:id", async (req, res) => {
+  const analysisId = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(analysisId)) {
+    return res.status(400).json({ error: "Invalid analysis id" });
   }
 
-  const output = analyzeListing(analysis.inputText);
-  const id = insertAnalysis({
-    userId: USER_ID,
-    inputText: analysis.inputText,
-    normalized: output.listing,
-    output
-  });
+  try {
+    const analysis = await getAnalysis(analysisId);
+    if (!analysis) {
+      return res.status(404).json({ error: "Analysis not found" });
+    }
 
-  return res.json({ id, ...output });
+    const output = await analyzeListing(analysis.inputText);
+    const id = await insertAnalysis({
+      userId: USER_ID,
+      inputText: analysis.inputText,
+      normalized: output.listing,
+      output
+    });
+
+    return res.json({ id, ...output });
+  } catch (err) {
+    console.error("Rerun failed:", err);
+    return res
+      .status(500)
+      .json({ error: "analysis_failed", message: err.message });
+  }
 });
 
 app.listen(PORT, () => {
